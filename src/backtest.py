@@ -97,18 +97,36 @@ def annualized_volatility(returns: pd.Series, periods_per_year: int = 252) -> fl
 def aggregate_returns(
     returns: pd.Series,
     method: str = "simple",
-) -> float:
+    cumulative: bool = False,
+) -> float | pd.Series:
     """
-    Aggregate per-period returns into total simple return.
+    Aggregate per-period returns.
+
+    Args:
+        returns: Period return series.
+        method: Interpretation of input returns ("simple" or "log").
+        cumulative: If True, return cumulative return series over time.
+            If False, return final total return scalar.
     """
     _validate_return_method(method)
 
     clean = returns.dropna().astype(float)
     if clean.empty:
+        if cumulative:
+            return pd.Series(dtype=float, name=returns.name)
         return 0.0
 
     if method == "simple":
+        if cumulative:
+            cumulative_returns = (1.0 + clean).cumprod() - 1.0
+            cumulative_returns.name = returns.name
+            return cumulative_returns
         return float((1.0 + clean).prod() - 1.0)
+
+    if cumulative:
+        cumulative_returns = np.expm1(clean.cumsum())
+        cumulative_returns.name = returns.name
+        return cumulative_returns
 
     return float(np.expm1(clean.sum()))
 
@@ -140,7 +158,7 @@ def compute_metrics(
         orient="index", columns=["Value"]
     ).rename_axis("Metric").reset_index()
 
-def compute_metrics_from_positions_and_prices(
+def compute_metrics_and_returns_from_positions_and_prices(
         positions: pd.Series,
         prices: pd.Series | pd.DataFrame,
         periods_per_year: int = 252,
@@ -151,4 +169,6 @@ def compute_metrics_from_positions_and_prices(
     asset_returns = compute_simple_asset_returns(prices)
     strategy_returns = compute_strategy_returns(asset_returns, positions)
     benchmark_returns = compute_benchmark_returns(asset_returns)
-    return compute_metrics(strategy_returns, benchmark_returns, periods_per_year=periods_per_year)
+    strategy_cumulative_returns = aggregate_returns(strategy_returns, method="simple", cumulative=True)
+    benchmark_cumulative_returns = aggregate_returns(benchmark_returns, method="simple", cumulative=True)
+    return compute_metrics(strategy_returns, benchmark_returns, periods_per_year=periods_per_year), strategy_cumulative_returns, benchmark_cumulative_returns
