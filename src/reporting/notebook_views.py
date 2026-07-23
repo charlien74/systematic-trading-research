@@ -2,6 +2,7 @@ import pandas as pd
 from IPython.display import HTML
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import numpy as np
 
 def render_metrics_grouped(metrics : dict) -> None:
     metrics_df = pd.DataFrame.from_dict(metrics, orient="index", columns=["Value"]).rename_axis("Metric").reset_index()
@@ -36,4 +37,69 @@ def plot_cumulative_returns(strategy_cumulative_returns : pd.Series,
     plt.gcf().autofmt_xdate()
     if title is not None:
         plt.title(title)
+    plt.show()
+
+def create_halflife_heatmaps(sharpe_array : np.ndarray, 
+                             return_array : np.ndarray,
+                             volatility_array : np.ndarray,
+                             short_halflife_values : np.ndarray,
+                             long_halflife_values : np.ndarray) -> None:
+    cmap = plt.cm.Reds.copy()
+    cmap.set_bad(color="white")
+
+    fig, ax = plt.subplots(3, 1, figsize=(6, 16))
+    sharpe_heatmap = ax[0].imshow(
+        sharpe_array.T,
+        origin="lower",
+        aspect="auto",
+        cmap=cmap,
+        interpolation="nearest",
+        extent=[
+            short_halflife_values.min() - 2.5,
+            short_halflife_values.max() + 2.5,
+            long_halflife_values.min() - 2.5,
+            long_halflife_values.max() + 2.5,
+        ],
+    )
+    ax[0].set_title("Sharpe Ratio Across EMA Half-Life Pairs")
+    ax[0].set_xlabel("Short Halflife")
+    ax[0].set_ylabel("Long Halflife")
+
+    return_heatmap = ax[1].imshow(
+        return_array.T,
+        origin="lower",
+        aspect="auto",
+        cmap=cmap,
+        interpolation="nearest",
+        extent=[
+            short_halflife_values.min() - 2.5,
+            short_halflife_values.max() + 2.5,
+            long_halflife_values.min() - 2.5,
+            long_halflife_values.max() + 2.5,
+        ],
+    )
+    ax[1].set_title("Total Return Across EMA Half-Life Pairs")
+    ax[1].set_xlabel("Short Halflife")
+    ax[1].set_ylabel("Long Halflife")
+
+    vol_heatmap = ax[2].imshow(
+        volatility_array.T,
+        origin="lower",
+        aspect="auto",
+        cmap=cmap,
+        interpolation="nearest",
+        extent=[
+            short_halflife_values.min() - 2.5,
+            short_halflife_values.max() + 2.5,
+            long_halflife_values.min() - 2.5,
+            long_halflife_values.max() + 2.5,
+        ],
+    )
+    ax[2].set_title("Volatility Across EMA Half-Life Pairs")
+    ax[2].set_xlabel("Short Halflife")
+    ax[2].set_ylabel("Long Halflife")
+
+    fig.colorbar(sharpe_heatmap, ax=ax[0], label="Sharpe Ratio")
+    fig.colorbar(return_heatmap, ax=ax[1], label="Total Return")
+    fig.colorbar(vol_heatmap, ax=ax[2], label="Volatility")
     plt.show()
