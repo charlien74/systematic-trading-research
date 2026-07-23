@@ -1,8 +1,10 @@
 import pandas as pd
 from IPython.display import HTML
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-def render_metrics_grouped(metrics_df : pd.DataFrame) -> None:
+def render_metrics_grouped(metrics : dict) -> None:
+    metrics_df = pd.DataFrame.from_dict(metrics, orient="index", columns=["Value"]).rename_axis("Metric").reset_index()
     metrics_long = metrics_df.copy()
     parsed = metrics_long["Metric"].str.extract(r"^(strategy|benchmark)_(.+)$")
     metrics_long["side"] = parsed[0]
@@ -29,6 +31,9 @@ def plot_cumulative_returns(strategy_cumulative_returns : pd.Series,
     plt.legend()
     plt.xlabel("Date")
     plt.ylabel("Cumulative Returns")
+    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=6))
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    plt.gcf().autofmt_xdate()
     if title is not None:
         plt.title(title)
     plt.show()

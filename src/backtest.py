@@ -147,16 +147,14 @@ def compute_metrics(
     strategy_sharpe = strategy_simple_returns.mean() / strategy_simple_returns.std() * np.sqrt(periods_per_year) if strategy_simple_returns.std() != 0 else 0.0
     benchmark_sharpe = benchmark_simple_returns.mean() / benchmark_simple_returns.std() * np.sqrt(periods_per_year) if benchmark_simple_returns.std() != 0 else 0.0
 
-    return pd.DataFrame.from_dict({
-            "strategy_annualized_volatility": strategy_annualized_vol,
-            "benchmark_annualized_volatility": benchmark_annualized_vol,
-            "strategy_total_return": strategy_total_return,
-            "benchmark_total_return": benchmark_total_return,
-            "strategy_sharpe": strategy_sharpe,
-            "benchmark_sharpe": benchmark_sharpe,
-        }, 
-        orient="index", columns=["Value"]
-    ).rename_axis("Metric").reset_index()
+    return {
+        "strategy_annualized_volatility": strategy_annualized_vol,
+        "benchmark_annualized_volatility": benchmark_annualized_vol,
+        "strategy_total_return": strategy_total_return,
+        "benchmark_total_return": benchmark_total_return,
+        "strategy_sharpe": strategy_sharpe,
+        "benchmark_sharpe": benchmark_sharpe,
+    }
 
 def compute_metrics_and_returns_from_positions_and_prices(
         positions: pd.Series,
