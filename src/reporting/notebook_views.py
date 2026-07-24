@@ -32,8 +32,8 @@ def plot_cumulative_returns(strategy_cumulative_returns : pd.Series,
     plt.legend()
     plt.xlabel("Date")
     plt.ylabel("Cumulative Returns")
-    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     plt.gcf().autofmt_xdate()
     if title is not None:
         plt.title(title)
@@ -171,4 +171,26 @@ def create_halflife_heatmaps_multi(ema_grid_results : pd.DataFrame) -> None:
             fig.colorbar(heatmap, ax=axis, label=colorbar_label)
 
     plt.tight_layout()
+    plt.show()
+
+def plot_emas_and_price(data_df : pd.DataFrame, 
+                        short_ema : pd.Series,
+                        long_ema : pd.Series,
+                        warmup_period : int,
+                        title : str | None = None,
+                        short_label : str | None = None,
+                        long_label : str | None = None) -> None:
+
+    plt.plot(data_df.index[warmup_period:], data_df['Close'].iloc[warmup_period:], color="tab:blue", label='Close Price')
+    plt.plot(data_df.index[warmup_period:], short_ema, color="tab:orange", label=short_label)
+    plt.plot(data_df.index[warmup_period:], long_ema, color="tab:green", label=long_label)
+
+    plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    plt.gcf().autofmt_xdate()
+
+    plt.title(title if title is not None else "Close Price with Short and Long EMAs")
+    plt.xlabel("Date")
+    plt.ylabel("Price (USD)")
+    plt.legend()
     plt.show()

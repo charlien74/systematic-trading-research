@@ -69,6 +69,7 @@ def compute_strategy_returns(
 
 def compute_benchmark_returns(
     asset_returns: pd.Series,
+    tail: int | None = None,
     method: str = "simple",
 ) -> pd.Series:
     """
@@ -82,6 +83,8 @@ def compute_benchmark_returns(
     if method == "log":
         benchmark_returns = convert_simple_to_log_returns(benchmark_returns)
 
+    if tail is not None:
+        benchmark_returns = benchmark_returns.tail(tail)
     return benchmark_returns
 
 def annualized_volatility(returns: pd.Series, periods_per_year: int = 252) -> float:
@@ -166,7 +169,7 @@ def compute_metrics_and_returns_from_positions_and_prices(
     """
     asset_returns = compute_simple_asset_returns(prices)
     strategy_returns = compute_strategy_returns(asset_returns, positions)
-    benchmark_returns = compute_benchmark_returns(asset_returns)
+    benchmark_returns = compute_benchmark_returns(asset_returns, tail=len(strategy_returns))
     strategy_cumulative_returns = aggregate_returns(strategy_returns, method="simple", cumulative=True)
     benchmark_cumulative_returns = aggregate_returns(benchmark_returns, method="simple", cumulative=True)
     return compute_metrics(strategy_returns, benchmark_returns, periods_per_year=periods_per_year), strategy_cumulative_returns, benchmark_cumulative_returns
