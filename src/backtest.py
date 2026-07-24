@@ -169,7 +169,12 @@ def compute_metrics_and_returns_from_positions_and_prices(
     """
     asset_returns = compute_simple_asset_returns(prices)
     strategy_returns = compute_strategy_returns(asset_returns, positions)
+    exposed_fraction = positions.abs().mean()
+    n_trades = positions.diff().abs().sum()
     benchmark_returns = compute_benchmark_returns(asset_returns, tail=len(strategy_returns))
     strategy_cumulative_returns = aggregate_returns(strategy_returns, method="simple", cumulative=True)
     benchmark_cumulative_returns = aggregate_returns(benchmark_returns, method="simple", cumulative=True)
-    return compute_metrics(strategy_returns, benchmark_returns, periods_per_year=periods_per_year), strategy_cumulative_returns, benchmark_cumulative_returns
+    metrics = compute_metrics(strategy_returns, benchmark_returns, periods_per_year=periods_per_year)
+    metrics["exposed_fraction"] = exposed_fraction
+    metrics["number_trades"] = n_trades
+    return metrics, strategy_cumulative_returns, benchmark_cumulative_returns

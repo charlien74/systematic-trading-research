@@ -112,6 +112,7 @@ def create_halflife_heatmaps_multi(ema_grid_results : pd.DataFrame) -> None:
         "strategy_sharpe",
         "strategy_total_return",
         "strategy_annualized_volatility",
+        "exposed_fraction",
     }
     missing_columns = required_columns.difference(ema_grid_results.columns)
     if missing_columns:
@@ -129,12 +130,13 @@ def create_halflife_heatmaps_multi(ema_grid_results : pd.DataFrame) -> None:
         ("strategy_sharpe", "Sharpe Ratio Across EMA Half-Life Pairs", "Sharpe Ratio"),
         ("strategy_total_return", "Total Return Across EMA Half-Life Pairs", "Total Return"),
         ("strategy_annualized_volatility", "Volatility Across EMA Half-Life Pairs", "Volatility"),
+        ("exposed_fraction", "Exposed Fraction Across EMA Half-Life Pairs", "Exposed Fraction"),
     ]
 
     fig, axes = plt.subplots(
         len(tickers),
         len(metric_specs),
-        figsize=(18, 5 * len(tickers)),
+        figsize=(6 * len(metric_specs), 5 * len(tickers)),
         squeeze=False,
     )
 
@@ -155,6 +157,10 @@ def create_halflife_heatmaps_multi(ema_grid_results : pd.DataFrame) -> None:
                 .reindex(index=short_halflife_values, columns=long_halflife_values)
                 .to_numpy(dtype=np.float32)
             )
+
+            if metric_column in ["strategy_annualized_volatility", "exposed_fraction"]:
+                # Invert volatility and exposed fraction so lower values map to stronger red.
+                heatmap_values = -heatmap_values
 
             axis = axes[row_index, column_index]
             heatmap = axis.imshow(
