@@ -65,6 +65,12 @@ print(metrics)
 - Data is cached locally under [data/market/](data/market/) to avoid repeated downloads.
 - The notebooks in [notebooks/](notebooks/) are a good place to explore strategy behavior and experiment with parameters.
 
+## Roadmap
+
+- Add out-of-sample validation. That is, we should test disjoint time-intervals.
+- Test a strategy with a "flat channel" and see if this makes a long-short strategy viable.
+- The same framework could be used to backtest other strategies, such as mean reversion and stat arb.
+
 ## License
 
 This project is provided for research and educational purposes.
