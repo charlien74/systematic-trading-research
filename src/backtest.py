@@ -218,3 +218,28 @@ def compute_metrics_and_returns_from_positions_and_prices(
     metrics["exposed_fraction"] = exposed_fraction
     metrics["number_trades"] = n_trades
     return metrics, strategy_cumulative_returns, benchmark_cumulative_returns
+
+def permute_prices(prices: pd.Series | pd.DataFrame, 
+                   column: str = "Close",
+                   seed: int | None = None) -> pd.Series:
+    """
+    Randomly permute returns of a price series, preserving the original index.
+    """
+    if isinstance(prices, pd.DataFrame):
+        if column not in prices.columns:
+            raise KeyError(f"Column '{column}' not found in prices DataFrame")
+        price_series = prices[column]
+    else:
+        price_series = prices
+
+    seed = seed or np.random.randint(0, 2**32 - 1)
+    np.random.seed(seed)
+
+    simple_returns = price_series.diff().dropna()
+    permuted_returns = simple_returns.reindex(np.random.permutation(simple_returns.index))
+    permuted_prices = pd.concat([pd.Series([price_series.iloc[0]]), permuted_returns]).cumsum()
+    permuted_prices.index = price_series.index
+    permuted_prices.name = price_series.name
+
+    return permuted_prices
+
