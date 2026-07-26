@@ -1,4 +1,4 @@
-# Trend Following Research
+# Systematic Trading Research
 
 A small exploratory Python project for researching and backtesting trend-following trading strategies. The current implementation focuses on simple exponential moving average (EMA) crossover rules and basic performance evaluation metrics such as return, volatility, and Sharpe ratio.
 
