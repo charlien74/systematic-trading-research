@@ -66,6 +66,46 @@ def compute_strategy_returns(
 
     return strategy_returns
 
+def compute_strategy_returns_asset_pair(
+    y_asset_returns: pd.Series, 
+    x_asset_returns: pd.Series,
+    positions: pd.DataFrame,
+    method: str = "simple",
+) -> pd.Series:
+    """
+    Compute strategy returns for a strategy involving 2 assets x and y
+    Positions should have cols 'x_position' and 'y_position'.
+    """
+    required_columns = {"x_position", "y_position"}
+    missing_columns = required_columns - set(positions.columns)
+    if missing_columns:
+        raise ValueError(
+            "positions DataFrame is missing required columns: "
+            f"{sorted(missing_columns)}"
+        )
+
+    x_positions = positions["x_position"]
+    y_positions = positions["y_position"]
+    
+    x_asset_returns, x_positions = x_asset_returns.align(
+        x_positions,
+        join="inner",
+    )
+    y_asset_returns, y_positions = y_asset_returns.align(
+        y_positions,
+        join="inner",
+    )
+
+    _validate_return_method(method)
+
+    strategy_returns = x_positions.shift(1) * x_asset_returns + y_positions.shift(1) * y_asset_returns
+    strategy_returns.name = "strategy_return"
+
+    if method == "log":
+        strategy_returns = convert_simple_to_log_returns(strategy_returns)
+
+    return strategy_returns
+
 
 def compute_benchmark_returns(
     asset_returns: pd.Series,

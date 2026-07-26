@@ -20,7 +20,7 @@ def compute_stat_arb_indicators(
         columns=[
             "spread",
             "z_score",
-            "hedge_ratio",
+            "beta",
             "intercept",
             "coint_p_value",
         ],
