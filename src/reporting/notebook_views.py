@@ -2,6 +2,7 @@ import pandas as pd
 from IPython.display import HTML, display
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 
 def render_metrics_grouped(metrics : dict) -> None:
@@ -39,7 +40,10 @@ def plot_cumulative_returns(strategy_cumulative_returns : pd.Series,
         plt.title(title)
     plt.show()
 
-def create_halflife_heatmaps(ema_grid_results : pd.DataFrame) -> None:
+def create_halflife_heatmaps(ema_grid_results: pd.DataFrame,
+                             enforce_same_heatmap_scales: bool = False,
+                             use_diverging_centered_scale: bool = False,
+                             ) -> None:
     required_columns = {
         "ticker",
         "short_halflife",
@@ -54,7 +58,13 @@ def create_halflife_heatmaps(ema_grid_results : pd.DataFrame) -> None:
         missing_list = ", ".join(sorted(missing_columns))
         raise ValueError(f"ema_grid_results is missing required columns: {missing_list}")
 
-    cmap = plt.cm.Reds.copy()
+    if use_diverging_centered_scale:
+        cmap = LinearSegmentedColormap.from_list(
+            "red_white_green",
+            ["#8b0000", "#ffffff", "#006400"],
+        )
+    else:
+        cmap = plt.cm.Reds.copy()
     cmap.set_bad(color="white")
 
     short_halflife_values = np.sort(ema_grid_results["short_halflife"].unique())
@@ -67,6 +77,22 @@ def create_halflife_heatmaps(ema_grid_results : pd.DataFrame) -> None:
         ("strategy_annualized_volatility", "Volatility Across EMA Half-Life Pairs", "Volatility"),
         ("exposed_fraction", "Exposed Fraction Across EMA Half-Life Pairs", "Exposed Fraction"),
     ]
+
+    metric_color_ranges : dict[str, tuple[float, float]] = {}
+    if enforce_same_heatmap_scales:
+        for metric_column, _, _ in metric_specs:
+            metric_values = ema_grid_results[metric_column].to_numpy(dtype=np.float32)
+            if metric_column in ["strategy_annualized_volatility", "exposed_fraction"]:
+                # Invert volatility and exposed fraction so lower values map to stronger red.
+                metric_values = -metric_values
+            if use_diverging_centered_scale:
+                lim = float(np.nanmax(np.abs(metric_values)))
+                metric_color_ranges[metric_column] = (-lim, lim)
+            else:
+                metric_color_ranges[metric_column] = (
+                    float(np.nanmin(metric_values)),
+                    float(np.nanmax(metric_values)),
+                )
 
     fig, axes = plt.subplots(
         len(tickers),
@@ -98,6 +124,14 @@ def create_halflife_heatmaps(ema_grid_results : pd.DataFrame) -> None:
                 heatmap_values = -heatmap_values
 
             axis = axes[row_index, column_index]
+            imshow_kwargs = {}
+            if enforce_same_heatmap_scales:
+                vmin, vmax = metric_color_ranges[metric_column]
+                imshow_kwargs = {"vmin": vmin, "vmax": vmax}
+            elif use_diverging_centered_scale:
+                lim = float(np.nanmax(np.abs(heatmap_values)))
+                imshow_kwargs = {"vmin": -lim, "vmax": lim}
+
             heatmap = axis.imshow(
                 heatmap_values.T,
                 origin="lower",
@@ -105,6 +139,7 @@ def create_halflife_heatmaps(ema_grid_results : pd.DataFrame) -> None:
                 cmap=cmap,
                 interpolation="nearest",
                 extent=extent,
+                **imshow_kwargs,
             )
             axis.set_title(f"{ticker}: {title}")
             axis.set_xlabel("Short Halflife")
