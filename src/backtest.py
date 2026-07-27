@@ -232,12 +232,18 @@ def permute_prices(prices: pd.Series | pd.DataFrame,
     else:
         price_series = prices
 
-    seed = seed or np.random.randint(0, 2**32 - 1)
+    seed = seed if seed is not None else np.random.randint(0, 2**32 - 1)
     np.random.seed(seed)
 
-    simple_returns = price_series.diff().dropna()
+    simple_returns = price_series.pct_change().dropna()
     permuted_returns = simple_returns.reindex(np.random.permutation(simple_returns.index))
-    permuted_prices = pd.concat([pd.Series([price_series.iloc[0]]), permuted_returns]).cumsum()
+
+    start_price = float(price_series.iloc[0])
+    growth_path = (1.0 + permuted_returns).cumprod()
+    permuted_prices = pd.concat(
+        [pd.Series([start_price]), start_price * growth_path],
+        ignore_index=True,
+    )
     permuted_prices.index = price_series.index
     permuted_prices.name = price_series.name
 
