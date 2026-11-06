@@ -65,9 +65,47 @@ print(metrics)
 - Data is cached locally under [data/market/](data/market/) to avoid repeated downloads.
 - The notebooks in [notebooks/](notebooks/) are a good place to explore strategy behavior and experiment with parameters.
 
+## Walk-forward evaluation
+
+[src/walk_forward.py](src/walk_forward.py) implements rolling EMA parameter
+selection on training data followed by evaluation with frozen parameters on the
+next test window. The EMA notebook includes a six-fold NVDA experiment with
+1,600 trading observations of warm-up, 1,008 training observations, and 504 test
+observations per fold. Selection maximizes training Sharpe after a fixed 5 bps
+cost per unit of turnover; Sharpe assumes a zero risk-free rate.
+
+Run the same experiment offline from the repository root using the cached NVDA
+CSV (or supply a compatible dated OHLCV CSV with `--prices`):
+
+```bash
+python -m scripts.run_ema_walk_forward
+```
+
+This writes `folds.csv`, `training_scores.csv`, `daily_returns.csv`, and
+`experiment.json` under `results/ema_walk_forward/`. The fold table includes
+training/test dates, selected half-lives, and net test metrics. Daily test returns
+can be compounded into one continuous out-of-sample curve. The evaluator raises
+if the requested folds do not fit instead of silently skipping them. Any history
+after the last requested test is unused and counted in the saved metadata.
+
+Signals at close t earn the close-to-close return at t+1 under a simplified
+execution assumption; costs are booked against that following return. The test
+portfolio starts flat once and carries positions between folds, paying turnover
+when the selected model changes its allocation. No final liquidation is charged.
+Buy-and-hold is a gross benchmark on identical test dates. Historical observations
+initialize EMAs without contributing to training scores, and test observations
+never enter their own fold's parameter selection. Later rolling training windows
+can include earlier test data that has become available.
+
+These are retrospective results on previously explored history and assets, not
+an untouched holdout. The legacy period-grid and permutation plots remain
+exploratory and are separate from this walk-forward evaluation.
+
+Run the validation checks with `python -m pytest` (requires `pytest`).
+
 ## Roadmap
 
-- Add out-of-sample validation. That is, we should test disjoint time-intervals.
+- Extend walk-forward evaluation to additional assets and reserve an untouched holdout.
 - Test a strategy with a "flat channel" and see if this makes a long-short strategy viable.
 - The same framework could be used to backtest other strategies, such as mean reversion and stat arb.
 

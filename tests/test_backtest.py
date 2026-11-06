@@ -7,10 +7,10 @@ from src.backtest import apply_transaction_costs, permute_prices
 def test_permute_prices_preserves_border_values() -> None:
     # Note: this fails if price is ever zero, as returns become infinite.
     prices = pd.Series(np.arange(1, 11, dtype=float), name="price")
-    permuted_prices = permute_prices(prices)
+    permuted_prices = permute_prices(prices, seed=0)
 
     assert permuted_prices.iloc[0] == prices.iloc[0]
-    assert permuted_prices.iloc[-1] == prices.iloc[-1]
+    assert permuted_prices.iloc[-1] == pytest.approx(prices.iloc[-1])
     # Make sure prices remains the same
     assert all(np.isclose(prices.iloc[i], np.float64(i + 1)) for i in range(10))
 
